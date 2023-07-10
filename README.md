@@ -1,6 +1,7 @@
 ## 使用
 
 目前只支持实名电子票展
+
 `api2.py` 为旧版不支持票次；`api.py` 与 `api2.py` `config.json` 不通用，切换记得删除
 
 ```bash
