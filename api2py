@@ -10,14 +10,6 @@ from requests.exceptions import Timeout
 session = requests.session()
 
 
-import pyttsx3
-engine = pyttsx3.init()
-def voice(message):
-    engine.setProperty('volume', 1.0)
-    engine.say(message)
-    engine.runAndWait()
-    engine.stop()
-
 
 # 初始化
 # 不想重新登录但是想改展次场次票种的话可以去 config.json 手改
@@ -44,16 +36,9 @@ def initConfig():
         "请输入购票链接并按回车继续, 格式例如 https://show.bilibili.com/platform/detail.html?id=72320\n"
     )
     config["projectId"] = int(config["url"][50:55])
-    print("接下来输入所有想要抢的票次")
-#    config["tickcnt"] =int(input("先输入总票次数量，注意超过 1 的票次请勿使用多线程\n"))
-    config["tickcnt"] =int(input("先输入总票次数量，注意所有票次的购票人要求统一\n"))
-    config["screennum"] =[0]*config["tickcnt"]
-    config["skunum"] =[0]*config["tickcnt"]
-    print(config["screennum"])
-    for ii in range(config["tickcnt"]):
-        print("接下来输入场次和价格的横向顺序, 输入数字, 例如第一个场次和第一个价格即为 1 1")
-        config["screennum"][ii] = int(input("请输入场次顺序并按回车继续, 格式例如 1\n"))
-        config["skunum"][ii] = int(input("请输入价格顺序并按回车继续, 格式例如 1\n"))
+    print("接下来输入场次和价格的横向顺序, 输入数字, 例如第一个场次和第一个价格即为 1 1\n")
+    config["screennum"] = int(input("请输入场次顺序并按回车继续, 格式例如 1\n"))
+    config["skunum"] = int(input("请输入价格顺序并按回车继续, 格式例如 1\n"))
     config["count"] = int(input("请输入购票数量并按回车继续, 购票人必须提前设置且设置的人数与你填的相符, 如 1\n"))
     config["timeout"] = int(input("请输入请求超时时间并按回车继续 如 1\n"))
     config["process"] = int(input("请输入计划使用的进程数并按回车继续 如 1\n"))
@@ -104,7 +89,6 @@ def sessionInit():
     session.headers.update(headers)
     print("Session初始化完成")
 
-tot =config["tickcnt"]
 
 def orderInfo():
     # 获取订单信息
@@ -115,20 +99,31 @@ def orderInfo():
     #print(response.json())
     #a =input()
 
-    config["screen_id"] =[0]*tot
-    config["sku_id"] =[0]*tot
-    config["pay_money"] =[0]*tot
-    for ii in range(tot):
-        data = response.json()
-        config["screen_id"][ii] = int(data["data"]["screen_list"][config["screennum"][ii] -1]["id"])
-        config["sku_id"][ii] = int(data["data"]["screen_list"][config["screennum"][ii] -1]["ticket_list"][config["skunum"][ii] -1]["id"])
-        config["pay_money"][ii] = int(data["data"]["screen_list"][config["screennum"][ii] - 1]["ticket_list"][config["skunum"][ii] - 1]["price"])
-    #print(config["pay_money"])
+    data = response.json()
+    config["screen_id"] = int(data["data"]["screen_list"][config["screennum"] -
+                                                          1]["id"])
+    config["sku_id"] = int(
+        data["data"]["screen_list"][config["screennum"] -
+                                    1]["ticket_list"][config["skunum"] -
+                                                      1]["id"])
+    ##################
+#    print("xqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqc") #
+#    print(data) #
+#    print("xqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqc") #
+#    print(config["screen_id"])
+    ###################
+#    print(data["data"]["screen_list"])
+#    config["pay_money"] = int(data["data"]["screen_list"][str(config["screen_id"])] # 原来是忘转字符串....
+#                              ["ticket_list"][str(config["sku_id"])]["price"])
+    config["pay_money"] = int(data["data"]["screen_list"][config["screennum"] - 1]
+                              ["ticket_list"][config["skunum"] - 1]["price"])
+    print(config["pay_money"])
     #a =input()
 
     print("订单信息获取成功")
     # 获取购票人
-    url = "https://show.bilibili.com/api/ticket/buyer/list?is_default&projectId=" + str(config["projectId"])
+    url = "https://show.bilibili.com/api/ticket/buyer/list?is_default&projectId=" + str(config[
+        "projectId"])
 
     response = session.request("GET", url, timeout=config["timeout"])
     data = response.json()
@@ -140,27 +135,28 @@ def orderInfo():
     print("购票人信息获取成功")
 
 
-def tokenGet(ii):
+def tokenGet():
     # 获取token
     url = "https://show.bilibili.com/api/ticket/order/prepare?project_id=" + str(config[
         "projectId"])
 
     payload = "count=" + str(config["count"]) + "&order_type=1&project_id=" + str(config[
-        "projectId"]) + "&screen_id=" + str(config["screen_id"][ii]) + "&sku_id=" + str(config["sku_id"][ii]) + "&token="
+        "projectId"]) + "&screen_id=" + str(config[
+            "screen_id"]) + "&sku_id=" + str(config["sku_id"]) + "&token="
 
     response = session.request("POST",
                                url,
                                data=payload,
                                timeout=config["timeout"])
     data = response.json()
-    config["token"][ii] = data["data"]["token"]
+    config["token"] = data["data"]["token"]
     print("Token获取成功")
 
 
-def orderCreate(ii):
+def orderCreate():
     # 创建订单
     url = "https://show.bilibili.com/api/ticket/order/createV2?project_id=" + str(config["projectId"])
-    print("step1") #
+    print("step1")
 
     #print(config)
     #a =input()
@@ -169,15 +165,15 @@ def orderCreate(ii):
         "project_id": config["projectId"],
         "screen_id": config["screen_id"],
         "count": config["count"],
-        "pay_money": config["pay_money"][ii] * config["count"],
+        "pay_money": config["pay_money"] * config["count"],
         "order_type": 1,
         "timestamp": int(round(time.time() * 1000)),
         "id_bind" : 2,#
         "need_contact": 0,#
-        "sku_id": config["sku_id"][ii],
+        "sku_id": config["sku_id"],
         "coupon_code": "",#
         "again" : 0,#
-        "token": config["token"][ii],
+        "token": config["token"],
         "deviceId": "",
         "buyer_info": json.dumps(config["buyer"]) #
     }
@@ -189,8 +185,8 @@ def orderCreate(ii):
  #           "\"id_type\":" +str(config["buyer"][0]["id_type"])
  #       +"}]"
  #   }
-    print(payload) #
-    print("step2") #
+    print(payload)
+    print("step2")
     #a =input()
     response = session.request("POST",
                                url,
@@ -199,12 +195,9 @@ def orderCreate(ii):
     
     data = response.json()
     print(data)
-    print("step3") #
+    print("step3")
     if data["errno"] == 0:
         print("已成功抢到票, 请尽快支付 https://show.bilibili.com/orderlist")
-        #for i in range(114):
-        for i in range(11):
-            voice('已抢到票, 票次为 '+str(ii+1))
         exit(0)
     elif data["errno"] == 100050:    # Token过期
         print("Token已过期! 正在重新获取")
@@ -226,25 +219,20 @@ def flow():
         print("获取订单信息")
         orderInfo()
 
-    config["token"] =[""]*tot
     while True:
-        for ii in range(tot):
-            time.sleep(0.2) # 改太快会被 ban
-            #time.sleep(1)
-            print("----------------------------------------------------------------")
-            print("当前票次："+str(ii))
-            if config["token"][ii] == "":
-                print("获取token中")
-            tokenGet(ii)
-            print("创建订单")
-            try:
-                orderCreate(ii)
-            except Timeout:
-                print("请求超时, 可能是服务器炸了, 也有可能是你网络不好\n")
-                continue
-            except Exception as e:
-                print(e)
-                continue
+        time.sleep(0.5)
+        if config["token"] == "":
+            print("获取token中")
+            tokenGet()
+        print("创建订单")
+        try:
+            orderCreate()
+        except Timeout:
+            print("请求超时, 可能是服务器炸了, 也有可能是你网络不好\n")
+            continue
+        except Exception as e:
+            print(e)
+            continue
 
 
 # 线程

@@ -42,3 +42,4 @@ wrapt==1.15.0
 wsproto==1.2.0
 yapf==0.40.1
 zipp==3.15.0
+pyttsx3~=2.90
