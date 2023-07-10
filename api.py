@@ -26,6 +26,7 @@ def initConfig():
     config["cookie"] = WebDriver.get_cookies()
     WebDriver.quit()
     print("cookie已保存")
+    print(config["cookie"])
     config["bid"] = int(input("请输入该账户的UID 如10000\n"))
     config["url"] = input(
         "请输入购票链接并按回车继续, 格式例如 https://show.bilibili.com/platform/detail.html?id=72320\n"
@@ -58,7 +59,7 @@ else:
 
 def sessionInit():
     headers = {
-        "x-risk-header": "platform/pc uid/" + config["bid"] +
+        "x-risk-header": "platform/pc uid/" + str(config["bid"]) +
         " deviceId/C4B85792-D2E6-44FD-83EE-A23CF2839DA0167634infoc",
         "sec-ch-ua":
         '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
@@ -87,8 +88,8 @@ def sessionInit():
 
 def orderInfo():
     # 获取订单信息
-    url = "https://show.bilibili.com/api/ticket/project/get?version=134&id=" + config[
-        "projectId"] + "&project_id=" + config["projectId"]
+    url = "https://show.bilibili.com/api/ticket/project/get?version=134&id=" + str(config[
+        "projectId"]) + "&project_id=" + str(config["projectId"])
 
     response = session.request("GET", url, timeout=config["timeout"])
 
@@ -99,13 +100,20 @@ def orderInfo():
         data["data"]["screen_list"][config["screennum"] -
                                     1]["ticket_list"][config["skunum"] -
                                                       1]["id"])
-    config["pay_money"] = int(data["data"]["screen_list"][config["screen_id"]]
-                              ["ticket_list"][config["sku_id"]]["price"])
+    ##################
+#    print("xqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqc") #
+#    print(data) #
+#    print("xqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqcxqc") #
+#    print(config["screen_id"])
+    ###################
+ #   config["pay_money"] = int(data["data"]["screen_list"][config["screen_id"]]
+    config["pay_money"] = int(data["data"]["screen_list"][config["screennum"] - 1]
+                              ["ticket_list"][config["skunum"] - 1]["price"])
 
     print("订单信息获取成功")
     # 获取购票人
-    url = "https://show.bilibili.com/api/ticket/buyer/list?is_default&projectId=" + config[
-        "projectId"]
+    url = "https://show.bilibili.com/api/ticket/buyer/list?is_default&projectId=" + str(config[
+        "projectId"])
 
     response = session.request("GET", url, timeout=config["timeout"])
     data = response.json()
@@ -119,12 +127,12 @@ def orderInfo():
 
 def tokenGet():
     # 获取token
-    url = "https://show.bilibili.com/api/ticket/order/prepare?project_id=" + config[
-        "projectId"]
+    url = "https://show.bilibili.com/api/ticket/order/prepare?project_id=" + str(config[
+        "projectId"])
 
-    payload = "count=" + config["count"] + "&order_type=1&project_id=" + config[
-        "projectId"] + "&screen_id=" + config[
-            "screen_id"] + "&sku_id=" + config["sku_id"] + "&token="
+    payload = "count=" + str(config["count"]) + "&order_type=1&project_id=" + str(config[
+        "projectId"]) + "&screen_id=" + str(config[
+            "screen_id"]) + "&sku_id=" + str(config["sku_id"]) + "&token="
 
     response = session.request("POST",
                                url,
@@ -137,9 +145,9 @@ def tokenGet():
 
 def orderCreate():
     # 创建订单
-    url = "https://show.bilibili.com/api/ticket/order/createV2?project_id=" + config[
-        "projectId"]
-
+    url = "https://show.bilibili.com/api/ticket/order/createV2?project_id=" + str(config[
+        "projectId"])
+    print("step1")
     payload = {
         "buyer_info": config["buyer"],
         "count": config["count"],
@@ -152,12 +160,13 @@ def orderCreate():
         "timestamp": int(round(time.time() * 1000)),
         "token": config["token"]
     }
-
+    print("step2")
     response = session.request("POST",
                                url,
                                data=payload,
                                timeout=config["timeout"])
     data = response.json()
+    print(data["errno"])
     if data["errno"] == 0:
         print("已成功抢到票, 请尽快支付 https://show.bilibili.com/orderlist")
         exit(0)
@@ -180,6 +189,7 @@ def flow():
         orderInfo()
 
     while True:
+        time.sleep(0.5)
         if config["token"] == "":
             print("获取token中")
             tokenGet()
