@@ -152,10 +152,15 @@ def tokenGet(ii):
                                url,
                                data=payload,
                                timeout=config["timeout"])
+    
+    #print(type(response))
+    #print(response)
+    #a =input()
+
     data = response.json()
 
     print(data)
-    if(data["errno"] == 100001):
+    while(data["errno"] != 0):
         time.sleep(1)
         response = session.request("POST",
                                url,
