@@ -153,6 +153,16 @@ def tokenGet(ii):
                                data=payload,
                                timeout=config["timeout"])
     data = response.json()
+
+    print(data)
+    if(data["errno"] == 100001):
+        time.sleep(1)
+        response = session.request("POST",
+                               url,
+                               data=payload,
+                               timeout=config["timeout"])
+        data = response.json()
+
     config["token"][ii] = data["data"]["token"]
     print("Token获取成功")
 
@@ -229,7 +239,7 @@ def flow():
     config["token"] =[""]*tot
     while True:
         for ii in range(tot):
-            time.sleep(0.2) # 改太快会被 ban
+            time.sleep(0.3) # 改太快会被 ban
             #time.sleep(1)
             print("----------------------------------------------------------------")
             print("当前票次："+str(ii))
